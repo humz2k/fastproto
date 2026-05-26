@@ -1,0 +1,21 @@
+
+
+namespace test::yee {
+
+message test2(32) {
+
+}
+
+message test(34) {
+    test : int32;
+    explicit : array<test::yee::test2>;
+    not_explicit: array<test2>;
+}
+
+}
+
+namespace other {
+    message test2(36) {
+        yeet : float32;
+    }
+}
