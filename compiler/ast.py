@@ -69,7 +69,7 @@ class ArrayType(ASTNode):
         self.inner_type = inner_type
 
     def eval(self, state: State):
-        return f"array<{self.inner_type.eval(state)}>"
+        return ('array', self.inner_type.eval(state))
 
 
 class Field(ASTNode):

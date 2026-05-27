@@ -1,21 +1,14 @@
 
 
-namespace test::yee {
+namespace test_namespace {
 
-message test2(32) {
-
+message test1(1){
+    field1 : int32;
 }
 
-message test(34) {
-    test : int32;
-    explicit : array<test::yee::test2>;
-    not_explicit: array<test2>;
+message test2(2){
+    field1 : int32;
+    field2 : string;
 }
 
-}
-
-namespace other {
-    message test2(36) {
-        yeet : float32;
-    }
 }
