@@ -1,14 +1,22 @@
 
 
-namespace test_namespace {
+namespace my_namespace {
 
-message test1(1){
-    field1 : int32;
+message simple_message(1){
+    simple_int_field : int32;
 }
 
-message test2(2){
-    field1 : int32;
-    field2 : string;
+namespace my_sub_namespace::my_next_sub_namespace {
+
+message message_with_string(2){
+    my_int_field : int32;
+    my_string_field : string;
+}
+
+}
+
+message message_with_arrays(3) {
+    my_array_field : array<simple_message>;
 }
 
 }
