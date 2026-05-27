@@ -1,16 +1,17 @@
 from rply import ParserGenerator
 
-from lex import lex
-from ast import (
-    State,
-    Identifier,
-    ExplicitIdentifier,
-    NamespaceNode,
-    Type,
+from .lexer import lex
+from .model import (
     ArrayType,
+    ExplicitIdentifier,
+    FastprotoError,
     Field,
+    Identifier,
     Message,
+    NamespaceNode,
     Program,
+    State,
+    Type,
 )
 
 
@@ -39,8 +40,7 @@ def parser():
     def program(p):
         if len(p) == 1:
             return Program().add_namespace(p[0])
-        else:
-            return p[0].add_namespace(p[1])
+        return p[0].add_namespace(p[1])
 
     @pg.production("namespace_element : namespace")
     @pg.production("namespace_element : message")
@@ -52,39 +52,35 @@ def parser():
     def namespace_body(p):
         if len(p) == 1:
             return [p[0]]
-        else:
-            return p[0] + [p[1]]
+        return p[0] + [p[1]]
 
     @pg.production("identifier : IDENTIFIER")
     @pg.production("identifier : identifier COLONCOLON IDENTIFIER")
     def identifier(p):
         if len(p) == 1:
             return Identifier(p[0].getstr())
-        else:
-            return p[0].make_explicit(p[2].getstr())
+        return p[0].make_explicit(p[2].getstr())
 
     @pg.production("namespace_name : IDENTIFIER")
     @pg.production("namespace_name : namespace_name COLONCOLON IDENTIFIER")
     def namespace_name(p):
         if len(p) == 1:
             return (p[0].getstr(),)
-        else:
-            return p[0] + (p[2].getstr(),)
+        return p[0] + (p[2].getstr(),)
 
     @pg.production("namespace : NAMESPACE namespace_name LBRACE namespace_body RBRACE")
     @pg.production("namespace : NAMESPACE namespace_name LBRACE RBRACE")
-    def expression_number(p):
+    def namespace(p):
         if len(p) == 4:
             return NamespaceNode(p[1], [])
         return NamespaceNode(p[1], p[3])
 
     @pg.production("type : identifier")
     @pg.production("type : ARRAY LANGLE identifier RANGLE")
-    def type(p):
+    def type_(p):
         if len(p) == 1:
             return Type(p[0])
-        else:
-            return ArrayType(p[2])
+        return ArrayType(p[2])
 
     @pg.production("field : IDENTIFIER COLON type SEMICOLON")
     def field(p):
@@ -95,8 +91,7 @@ def parser():
     def field_list(p):
         if len(p) == 1:
             return [p[0]]
-        else:
-            return p[0] + [p[1]]
+        return p[0] + [p[1]]
 
     @pg.production(
         "message : MESSAGE IDENTIFIER LPAREN NUMBER RPAREN LBRACE field_list RBRACE"
@@ -107,6 +102,17 @@ def parser():
             return Message(p[1].getstr(), int(p[3].getstr()))
         return Message(p[1].getstr(), int(p[3].getstr()), p[6])
 
+    @pg.error
+    def error_handler(token):
+        if token is None:
+            raise FastprotoError("Unexpected end of input")
+
+        position = token.getsourcepos()
+        raise FastprotoError(
+            f"Unexpected token {token.gettokentype()} at line {position.lineno}, "
+            f"column {position.colno}: {token.getstr()!r}"
+        )
+
     return pg.build()
 
 
@@ -114,13 +120,9 @@ def parse(tokens):
     return parser().parse(tokens)
 
 
-if __name__ == "__main__":
-    with open(
-        "/Users/hqureshi/Documents/fastproto/compiler/example.fastproto", "r"
-    ) as f:
-        raw = f.read()
-    tokens = lex(raw)
+def parse_source(source: str):
+    return parse(lex(source))
 
-    out = parse(tokens)
-    state = State()
-    print(out.eval(state))
+
+def compile_source(source: str):
+    return parse_source(source).eval(State())

@@ -1,10 +1,15 @@
 #pragma once
 
+#ifndef FASTPROTO_RUNTIME_HPP_INCLUDED
+#define FASTPROTO_RUNTIME_HPP_INCLUDED
+
 #include <arpa/inet.h>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -214,10 +219,10 @@ template <typename T> class Parser;
     void serialize_##name() {                                                  \
         std::span<const std::byte> data((const std::byte*)name##_data_.data(), \
                                         name##_data_.size());                  \
-        std::byte* buffer_start = buffer_.data();                              \
-        std::byte* data_start = buffer_start + buffer_.size();                 \
+        uint32_t offset = (uint32_t)buffer_.size();                            \
         buffer_.insert(buffer_.end(), data.begin(), data.end());               \
-        instance_.set_##name(buffer_start, data_start, data.size());           \
+        instance_.set_##name(buffer_.data(), buffer_.data() + offset,          \
+                             data.size());                                     \
     }
 
 #define FASTPROTO_FACTORY_ARRAY_FIELD(type, name)                              \
@@ -232,11 +237,11 @@ template <typename T> class Parser;
   private:                                                                     \
     void serialize_##name() {                                                  \
         std::span<const std::byte> data((const std::byte*)name##_data_.data(), \
-                                        name##_data_.size());                  \
-        std::byte* buffer_start = buffer_.start();                             \
-        std::byte* data_start = buffer_start + buffer_.end();                  \
+                                        name##_data_.size() * sizeof(type));   \
+        uint32_t offset = (uint32_t)buffer_.size();                            \
         buffer_.insert(buffer_.end(), data.begin(), data.end());               \
-        instance_.set_##name(buffer_start, data_start, data.size());           \
+        instance_.set_##name(buffer_.data(), buffer_.data() + offset,          \
+                             name##_data_.size());                             \
     }
 
 #define FASTPROTO_BEGIN_FACTORY_DEFINITION(ns, name)                           \
@@ -325,3 +330,5 @@ inline bool validate_buffer(std::span<const std::byte> buffer) {
     ;
 
 } // namespace fastproto
+
+#endif // FASTPROTO_RUNTIME_HPP_INCLUDED

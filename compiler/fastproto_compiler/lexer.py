@@ -17,19 +17,11 @@ def lexer():
     lg.add("IDENTIFIER", r"[a-zA-Z_][a-zA-Z0-9_]*")
     lg.add("LANGLE", r"<")
     lg.add("RANGLE", r">")
+    lg.ignore(r"//[^\n]*")
+    lg.ignore(r"/\*[\s\S]*?\*/")
     lg.ignore(r"\s+")
     return lg.build()
 
 
-def lex(input: str):
-    return lexer().lex(input)
-
-
-if __name__ == "__main__":
-    with open(
-        "/Users/hqureshi/Documents/fastproto/compiler/example.fastproto", "r"
-    ) as f:
-        raw = f.read()
-    tokens = lex(raw)
-    for token in tokens:
-        print(token)
+def lex(source: str):
+    return lexer().lex(source)

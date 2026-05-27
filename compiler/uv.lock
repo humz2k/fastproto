@@ -60,9 +60,9 @@ wheels = [
 ]
 
 [[package]]
-name = "compiler"
+name = "fastproto-compiler"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "rply" },
 ]
