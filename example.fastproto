@@ -2,21 +2,21 @@
 
 namespace my_namespace {
 
-message simple_message(1){
+message SimpleMessage(1){
     simple_int_field : int32;
 }
 
 namespace my_sub_namespace::my_next_sub_namespace {
 
-message message_with_string(2){
+message MessageWithString(2){
     my_int_field : int32;
     my_string_field : string;
 }
 
 }
 
-message message_with_arrays(3) {
-    my_array_field : array<simple_message>;
+message MessageWithArray(3) {
+    my_array_field : array<SimpleMessage>;
 }
 
 }
