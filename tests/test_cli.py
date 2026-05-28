@@ -28,6 +28,10 @@ class FastprotoCompilerTests(unittest.TestCase):
         self.assertIn("#include <span>", header)
         self.assertIn("#ifndef FASTPROTO_RUNTIME_HPP_INCLUDED", header)
         self.assertNotIn('#include "fastproto/fastproto.hpp"', header)
+        self.assertNotIn("htonll", header)
+        self.assertNotIn("ntohll", header)
+        self.assertIn("host_to_network64", header)
+        self.assertIn("network_to_host64", header)
         self.assertIn("FASTPROTO_BEGIN_STRUCT_DEFINITION(sample, Point, 1)", header)
         self.assertIn("FASTPROTO_STRING_FIELD(text)", header)
 

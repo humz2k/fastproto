@@ -35,10 +35,6 @@ inline int32 to_network_order(int32 value) {
     value = htonl(value);
     return value;
 }
-inline int64 to_network_order(int64 value) {
-    value = htonll(value);
-    return value;
-}
 inline uint8 to_network_order(uint8 value) { return value; }
 inline uint16 to_network_order(uint16 value) {
     value = htons(value);
@@ -48,8 +44,44 @@ inline uint32 to_network_order(uint32 value) {
     value = htonl(value);
     return value;
 }
+
+static_assert(std::endian::native == std::endian::little ||
+                  std::endian::native == std::endian::big,
+              "fastproto only supports little- or big-endian targets");
+
+inline uint64 byteswap64(uint64 value) {
+    return ((value & 0x00000000000000FFULL) << 56) |
+           ((value & 0x000000000000FF00ULL) << 40) |
+           ((value & 0x0000000000FF0000ULL) << 24) |
+           ((value & 0x00000000FF000000ULL) << 8) |
+           ((value & 0x000000FF00000000ULL) >> 8) |
+           ((value & 0x0000FF0000000000ULL) >> 24) |
+           ((value & 0x00FF000000000000ULL) >> 40) |
+           ((value & 0xFF00000000000000ULL) >> 56);
+}
+
+inline uint64 host_to_network64(uint64 value) {
+    if constexpr (std::endian::native == std::endian::little) {
+        return byteswap64(value);
+    }
+    return value;
+}
+
+inline uint64 network_to_host64(uint64 value) {
+    return host_to_network64(value);
+}
+
 inline uint64 to_network_order(uint64 value) {
-    value = htonll(value);
+    value = host_to_network64(value);
+    return value;
+}
+inline int64 to_network_order(int64 value) {
+    uint64 temp;
+    static_assert(sizeof(int64) == sizeof(uint64),
+                  "Size of int64 must be 8 bytes");
+    std::memcpy(&temp, &value, sizeof(int64));
+    temp = host_to_network64(temp);
+    std::memcpy(&value, &temp, sizeof(int64));
     return value;
 }
 inline float32 to_network_order(float32 value) {
@@ -66,7 +98,7 @@ inline float64 to_network_order(float64 value) {
     static_assert(sizeof(float64) == sizeof(uint64),
                   "Size of float64 must be 8 bytes");
     std::memcpy(&temp, &value, sizeof(float64));
-    temp = htonll(temp);
+    temp = host_to_network64(temp);
     std::memcpy(&value, &temp, sizeof(float64));
     return value;
 }
@@ -80,10 +112,6 @@ inline int32 from_network_order(int32 value) {
     value = ntohl(value);
     return value;
 }
-inline int64 from_network_order(int64 value) {
-    value = ntohll(value);
-    return value;
-}
 inline uint8 from_network_order(uint8 value) { return value; }
 inline uint16 from_network_order(uint16 value) {
     value = ntohs(value);
@@ -94,7 +122,16 @@ inline uint32 from_network_order(uint32 value) {
     return value;
 }
 inline uint64 from_network_order(uint64 value) {
-    value = ntohll(value);
+    value = network_to_host64(value);
+    return value;
+}
+inline int64 from_network_order(int64 value) {
+    uint64 temp;
+    static_assert(sizeof(int64) == sizeof(uint64),
+                  "Size of int64 must be 8 bytes");
+    std::memcpy(&temp, &value, sizeof(int64));
+    temp = network_to_host64(temp);
+    std::memcpy(&value, &temp, sizeof(int64));
     return value;
 }
 inline float32 from_network_order(float32 value) {
@@ -111,7 +148,7 @@ inline float64 from_network_order(float64 value) {
     static_assert(sizeof(float64) == sizeof(uint64),
                   "Size of float64 must be 8 bytes");
     std::memcpy(&temp, &value, sizeof(float64));
-    temp = ntohll(temp);
+    temp = network_to_host64(temp);
     std::memcpy(&value, &temp, sizeof(float64));
     return value;
 }
