@@ -98,6 +98,26 @@ fastproto -o generated.hpp example.fastproto
 
 If `-o` is omitted, the generated header is written to stdout.
 
+## Design Notes
+
+fastproto is currently optimized for low-copy serialization and parsing on
+common GCC/Clang targets. Generated messages use `[[gnu::packed]]` structs, and
+parsers view caller-owned byte buffers directly instead of materializing decoded
+objects.
+
+That keeps the hot path small:
+
+- Simple messages serialize as a span over the factory-owned struct.
+- Strings parse as `std::string_view` into the input buffer.
+- Arrays parse as spans or indexed views into the input buffer.
+- Builtin scalar values are converted to/from network byte order.
+
+The tradeoff is that this is not trying to be a maximally portable C++ wire
+format runtime. It assumes GCC/Clang-style packed-struct behavior on common
+architectures. The parser currently reinterprets bytes as generated structs,
+which is fast, but leans on compiler and platform behavior around packed layout,
+alignment, and object lifetime.
+
 ## Status
 
 This project is still early WIP. The schema language, generated C++ API, binary
