@@ -223,3 +223,4 @@ build
 *.o
 
 generated.hpp
+.clang-format

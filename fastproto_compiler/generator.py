@@ -168,7 +168,8 @@ class Generator:
 
             if _is_array(field.type):
                 inner_type = field.type[1]
-                if _is_builtin(inner_type):
+                is_builtin = _is_builtin(inner_type)
+                if is_builtin:
                     cpp_type = f"fastproto::{inner_type[1]}"
                 else:
                     if not self.is_simple(inner_type):
@@ -178,12 +179,21 @@ class Generator:
                         )
                     cpp_type = self._message_type(inner_type)
                 out.append(f"FASTPROTO_ARRAY_FIELD({cpp_type}, {field.name})")
-                factory_fields.append(
-                    f"FASTPROTO_FACTORY_ARRAY_FIELD({cpp_type}, {field.name})"
-                )
-                parser_fields.append(
-                    f"FASTPROTO_PARSER_ARRAY_FIELD({cpp_type}, {field.name})"
-                )
+
+                if is_builtin:
+                    factory_fields.append(
+                        f"FASTPROTO_FACTORY_BUILTIN_ARRAY_FIELD({cpp_type}, {field.name})"
+                    )
+                    parser_fields.append(
+                        f"FASTPROTO_PARSER_BUILTIN_ARRAY_FIELD({cpp_type}, {field.name})"
+                    )
+                else:
+                    factory_fields.append(
+                        f"FASTPROTO_FACTORY_ARRAY_FIELD({cpp_type}, {field.name})"
+                    )
+                    parser_fields.append(
+                        f"FASTPROTO_PARSER_ARRAY_FIELD({cpp_type}, {field.name})"
+                    )
                 continue
 
             if not self.is_simple(field.type):

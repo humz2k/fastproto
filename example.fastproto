@@ -17,6 +17,7 @@ message MessageWithString(2){
 
 message MessageWithArray(3) {
     my_array_field : array<SimpleMessage>;
+    my_builtin_array_field : array<int32>;
 }
 
 }

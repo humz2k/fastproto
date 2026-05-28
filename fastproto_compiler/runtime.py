@@ -167,7 +167,8 @@ template <typename T> class Parser;
     std::span<const type> get_##name(const std::byte* buffer_start) const {    \
         return std::span<const type>(                                          \
             (const type*)(buffer_start + name##_.offset), name##_.size);       \
-    }
+    }                                                                          \
+    size_t size_##name() const { return name##_.size; }
 
 #define FASTPROTO_FIELD(message_type, name)                                    \
   private:                                                                     \
@@ -228,15 +229,38 @@ template <typename T> class Parser;
     std::vector<type> name##_data_;                                            \
                                                                                \
   public:                                                                      \
-    void add_##name(const type& value) { name##_data_.push_back(value); }      \
+    type* add_##name() { return &(name##_data_.emplace_back()); }              \
     void clear_##name() { name##_data_.clear(); }                              \
     std::span<const type> get_##name() const { return name##_data_; }          \
                                                                                \
   private:                                                                     \
     void serialize_##name() {                                                  \
-        std::span<const std::byte> data(                                       \
-            (const std::byte*)name##_data_.data(),                             \
-            name##_data_.size() * sizeof(type));                               \
+        std::span<const std::byte> data((const std::byte*)name##_data_.data(), \
+                                        name##_data_.size() * sizeof(type));   \
+        uint32_t offset = (uint32_t)buffer_.size();                            \
+        buffer_.insert(buffer_.end(), data.begin(), data.end());               \
+        instance_.set_##name(buffer_.data(), buffer_.data() + offset,          \
+                             name##_data_.size());                             \
+    }
+
+#define FASTPROTO_FACTORY_BUILTIN_ARRAY_FIELD(type, name)                      \
+  private:                                                                     \
+    std::vector<type> name##_data_;                                            \
+                                                                               \
+  public:                                                                      \
+    void add_##name(const type& value) {                                       \
+        name##_data_.push_back(to_network_order(value));                       \
+    }                                                                          \
+    void clear_##name() { name##_data_.clear(); }                              \
+    size_t size_##name() const { return name##_data_.size(); }                 \
+    type get_##name(size_t index) const {                                      \
+        return from_network_order(name##_data_[index]);                        \
+    }                                                                          \
+                                                                               \
+  private:                                                                     \
+    void serialize_##name() {                                                  \
+        std::span<const std::byte> data((const std::byte*)name##_data_.data(), \
+                                        name##_data_.size() * sizeof(type));   \
         uint32_t offset = (uint32_t)buffer_.size();                            \
         buffer_.insert(buffer_.end(), data.begin(), data.end());               \
         instance_.set_##name(buffer_.data(), buffer_.data() + offset,          \
@@ -307,6 +331,13 @@ inline bool validate_buffer(std::span<const std::byte> buffer) {
     std::span<const type> get_##name() const {                                 \
         return message()->get_##name(buffer_.data());                          \
     }
+
+#define FASTPROTO_PARSER_BUILTIN_ARRAY_FIELD(type, name)                       \
+  public:                                                                      \
+    type get_##name(size_t idx) const {                                        \
+        return from_network_order(message()->get_##name(buffer_.data())[idx]); \
+    }                                                                          \
+    size_t size_##name() const { return message()->size_##name(); }
 
 #define FASTPROTO_BEGIN_PARSER_DEFINITION(ns, name)                            \
     template <> class Parser<generated::ns::name> {                            \
