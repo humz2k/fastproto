@@ -33,6 +33,7 @@ inline std::span<const std::byte> span_from_buffer(py::buffer buffer) {
 } // namespace fastproto::python
 
 #define FASTPROTO_PYTHON_BEGIN_FACTORY_DEFINITION(ns, name)                    \
+    namespace fastproto::python::generated::ns {                               \
     class name##Factory {                                                      \
       private:                                                                 \
         fastproto::Factory<fastproto::generated::ns::name> factory_;           \
@@ -57,21 +58,19 @@ inline std::span<const std::byte> span_from_buffer(py::buffer buffer) {
     type get_##name(size_t index) const { return factory_.get_##name(index); }
 
 #define FASTPROTO_PYTHON_FACTORY_MESSAGE_ARRAY_FIELD(view_type, name)          \
-    view_type##MutableView add_##name() {                                      \
-        return view_type##MutableView(factory_.add_##name());                  \
-    }                                                                          \
+    view_type add_##name() { return view_type(factory_.add_##name()); }        \
     void clear_##name() { factory_.clear_##name(); }
 
 #define FASTPROTO_PYTHON_FACTORY_MESSAGE_FIELD(view_type, name)                \
-    view_type##MutableView edit_##name() {                                     \
-        return view_type##MutableView(factory_.edit_##name());                 \
-    }
+    view_type edit_##name() { return view_type(factory_.edit_##name()); }
 
 #define FASTPROTO_PYTHON_END_FACTORY_DEFINITION()                              \
     }                                                                          \
-    ;
+    ;                                                                          \
+    }
 
 #define FASTPROTO_PYTHON_BEGIN_PARSER_DEFINITION(ns, name)                     \
+    namespace fastproto::python::generated::ns {                               \
     class name##Parser {                                                       \
       private:                                                                 \
         py::object owner_;                                                     \
@@ -102,21 +101,23 @@ inline std::span<const std::byte> span_from_buffer(py::buffer buffer) {
     py::list name() const {                                                    \
         py::list out;                                                          \
         for (const auto& item : parser_.get_##name()) {                        \
-            out.append(view_type##View(&item, owner_));                        \
+            out.append(view_type(&item, owner_));                              \
         }                                                                      \
         return out;                                                            \
     }
 
 #define FASTPROTO_PYTHON_PARSER_MESSAGE_FIELD(view_type, name)                 \
-    view_type##View name() const {                                             \
-        return view_type##View(&parser_.get_##name(), owner_);                 \
+    view_type name() const {                                                   \
+        return view_type(&parser_.get_##name(), owner_);                       \
     }
 
 #define FASTPROTO_PYTHON_END_PARSER_DEFINITION()                               \
     }                                                                          \
-    ;
+    ;                                                                          \
+    }
 
 #define FASTPROTO_PYTHON_BEGIN_VIEW_DEFINITION(ns, name)                       \
+    namespace fastproto::python::generated::ns {                               \
     class name##View {                                                         \
       private:                                                                 \
         const fastproto::generated::ns::name* message_;                        \
@@ -134,15 +135,17 @@ inline std::span<const std::byte> span_from_buffer(py::buffer buffer) {
     std::string name() const { return std::string(message_->get_##name()); }
 
 #define FASTPROTO_PYTHON_VIEW_MESSAGE_FIELD(view_type, name)                   \
-    view_type##View name() const {                                             \
-        return view_type##View(&message_->get_##name(), owner_);               \
+    view_type name() const {                                                   \
+        return view_type(&message_->get_##name(), owner_);                     \
     }
 
 #define FASTPROTO_PYTHON_END_VIEW_DEFINITION()                                 \
     }                                                                          \
-    ;
+    ;                                                                          \
+    }
 
 #define FASTPROTO_PYTHON_BEGIN_MUTABLE_VIEW_DEFINITION(ns, name)               \
+    namespace fastproto::python::generated::ns {                               \
     class name##MutableView {                                                  \
       private:                                                                 \
         fastproto::generated::ns::name* message_;                              \
@@ -156,32 +159,33 @@ inline std::span<const std::byte> span_from_buffer(py::buffer buffer) {
     type name() const { return message_->get_##name(); }
 
 #define FASTPROTO_PYTHON_MUTABLE_VIEW_MESSAGE_FIELD(view_type, name)           \
-    view_type##MutableView edit_##name() {                                     \
-        return view_type##MutableView(message_->edit_##name());                \
+    view_type edit_##name() {                                                  \
+        return view_type(message_->edit_##name());                             \
     }
 
 #define FASTPROTO_PYTHON_END_MUTABLE_VIEW_DEFINITION()                         \
     }                                                                          \
-    ;
+    ;                                                                          \
+    }
 
-#define FASTPROTO_PYTHON_BIND_FACTORY_BEGIN(module, name)                      \
-    py::class_<name##Factory>(module, #name "Factory").def(py::init<>())
+#define FASTPROTO_PYTHON_BIND_FACTORY_BEGIN(module, cls, name)                 \
+    py::class_<cls>(module, #name "Factory").def(py::init<>())
 
-#define FASTPROTO_PYTHON_BIND_FACTORY_END(name)                                \
-    .def("serialize", &name##Factory::serialize);
+#define FASTPROTO_PYTHON_BIND_FACTORY_END(cls)                                 \
+    .def("serialize", &cls::serialize);
 
-#define FASTPROTO_PYTHON_BIND_PARSER_BEGIN(module, name)                       \
-    py::class_<name##Parser>(module, #name "Parser").def(py::init<py::buffer>())
+#define FASTPROTO_PYTHON_BIND_PARSER_BEGIN(module, cls, name)                  \
+    py::class_<cls>(module, #name "Parser").def(py::init<py::buffer>())
 
 #define FASTPROTO_PYTHON_BIND_PARSER_END() ;
 
-#define FASTPROTO_PYTHON_BIND_VIEW_BEGIN(module, name)                         \
-    py::class_<name##View>(module, #name "View")
+#define FASTPROTO_PYTHON_BIND_VIEW_BEGIN(module, cls, name)                    \
+    py::class_<cls>(module, #name "View")
 
 #define FASTPROTO_PYTHON_BIND_VIEW_END() ;
 
-#define FASTPROTO_PYTHON_BIND_MUTABLE_VIEW_BEGIN(module, name)                 \
-    py::class_<name##MutableView>(module, #name "MutableView")
+#define FASTPROTO_PYTHON_BIND_MUTABLE_VIEW_BEGIN(module, cls, name)            \
+    py::class_<cls>(module, #name "MutableView")
 
 #define FASTPROTO_PYTHON_BIND_MUTABLE_VIEW_END() ;
 

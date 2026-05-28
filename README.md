@@ -98,6 +98,22 @@ fastproto -o generated.hpp example.fastproto
 
 If `-o` is omitted, the generated header is written to stdout.
 
+Generate a Python binding package:
+
+```sh
+fastproto --python-out fastproto_example example.fastproto
+```
+
+This creates `./fastproto_example` with the generated C++ header, pybind11
+binding source, `pyproject.toml`, `CMakeLists.txt`, and Python package glue. The
+compiled extension module is named `_fastproto_example` and is installed inside
+the `fastproto_example` package. In this mode, `--python-out` is the output
+directory and package name, so `-o` is not used. Build it with:
+
+```sh
+uv build fastproto_example
+```
+
 ## Design Notes
 
 fastproto is currently optimized for low-copy serialization and parsing on
