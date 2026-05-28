@@ -78,22 +78,34 @@ namespace my_namespace::my_sub_namespace {
 
 ## CLI
 
-Run from the repo with uv:
+Install the command from PyPI:
 
 ```sh
-uv run fastproto -o generated.hpp example.fastproto
-```
-
-Or install the command locally:
-
-```sh
-uv tool install --editable .
+pip install fastproto-compiler
 ```
 
 Then run:
 
 ```sh
 fastproto -o generated.hpp example.fastproto
+```
+
+You can also run it without installing it globally with uv:
+
+```sh
+uvx --from fastproto-compiler fastproto -o generated.hpp example.fastproto
+```
+
+Run from the repo with uv:
+
+```sh
+uv run fastproto -o generated.hpp example.fastproto
+```
+
+For local development, install the command from the checkout:
+
+```sh
+uv tool install --editable .
 ```
 
 If `-o` is omitted, the generated header is written to stdout.
