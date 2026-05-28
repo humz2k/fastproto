@@ -20,4 +20,13 @@ message MessageWithArray(3) {
     my_builtin_array_field : array<int32>;
 }
 
+namespace my_sub_namespace::my_next_sub_namespace {
+
+message MessageWithString2(4){
+    my_int_field : int32;
+    my_string_field : string;
+}
+
+}
+
 }

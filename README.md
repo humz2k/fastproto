@@ -98,6 +98,80 @@ fastproto -o generated.hpp example.fastproto
 
 If `-o` is omitted, the generated header is written to stdout.
 
+## Python Bindings
+
+fastproto can also generate a small Python package containing pybind11 bindings
+for a schema:
+
+```sh
+fastproto --python-out fastproto_example example.fastproto
+```
+
+This creates `./fastproto_example` with the generated C++ header, pybind11
+binding source, `pyproject.toml`, `CMakeLists.txt`, and Python package glue. The
+compiled extension module is named `_fastproto_example` and is installed inside
+the `fastproto_example` package. In this mode, `--python-out` is the output
+directory and package name, so `-o` is not used.
+
+The generated directory looks like:
+
+```text
+fastproto_example/
+  pyproject.toml
+  CMakeLists.txt
+  include/generated.hpp
+  src/fastproto_example_bindings.cpp
+  fastproto_example/__init__.py
+```
+
+Build the package with:
+
+```sh
+uv build fastproto_example
+```
+
+Or install it into the current environment:
+
+```sh
+uv pip install ./fastproto_example
+```
+
+Fastproto namespaces become Python submodules. For the top-level
+`example.fastproto`, message factories and parsers are available under
+`fastproto_example.my_namespace`:
+
+```python
+from fastproto_example.my_namespace import SimpleMessageFactory, SimpleMessageParser
+
+factory = SimpleMessageFactory()
+factory.simple_int_field = 10
+
+data = factory.serialize()
+
+parser = SimpleMessageParser(data)
+print(parser.simple_int_field)
+```
+
+Nested fastproto namespaces map to nested Python modules:
+
+```python
+from fastproto_example.my_namespace.my_sub_namespace.my_next_sub_namespace import (
+    MessageWithStringFactory,
+    MessageWithStringParser,
+)
+
+factory = MessageWithStringFactory()
+factory.my_int_field = 42
+factory.my_string_field = "Hello from Python"
+
+parser = MessageWithStringParser(factory.serialize())
+print(parser.my_int_field, parser.my_string_field)
+```
+
+The Python binding generator is also early WIP. It currently emits a pybind11
+package scaffold that can be built with scikit-build-core, and it embeds the
+Python binding runtime into the generated binding source.
+
 ## Design Notes
 
 fastproto is currently optimized for low-copy serialization and parsing on
